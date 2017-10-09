@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+set -e
+set -o pipefail
+
+REPO_USERNAME="${REPO_USERNAME:-douglasmiranda}"
+IMAGES=$(ls -d */Dockerfile | cut -d '/' -f1)
+ROOT_DIR=$(pwd)
+
+# STYLES
+# use to mark the end of coloring words
+NO_COLOR="\033[0m"
+
+print_green() { printf "\033[32m$1${NO_COLOR}"; }
+print_red() { printf "\033[31m$1${NO_COLOR}"; }
+print_yellow() { printf "\033[33m$1${NO_COLOR}"; }
+print_blue() { printf "\033[34m$1${NO_COLOR}"; }
+
+# MESSAGES
+error_message() { ## error_message <message> <exit_on_error>
+    print_red "[ERROR] "; echo -e $1
+    if [[ "$2" = "exit_on_error" ]]; then exit 1; fi
+}
+ok_message() { print_green "[OK] "; echo -e $1; }
+
+help() {
+    __print_help() { printf "\033[33m%-20s\033[0m" "$1"; echo ": $2"; }
+    print_blue "Usage: \n"
+    __print_help "help" "print this help message and exit"
+    __print_help "list_images" "list all images with tags"
+    __print_help "build" "build image using 'latest' tag"
+    __print_help "build_all" "build all images using 'latest' tag"
+    __print_help "tag" "auto tag image based on 'LABEL version=...' value defined on it's Dockerfile"
+    __print_help "upload" "upload image to Docker Hub; by default the tag 'latest'"
+}
+
+get_tag() { ## get_tag <image>
+    echo $(awk '/LABEL version="*"/ {print}' $1/Dockerfile | cut -d '"' -f2)
+}
+
+list_images() {
+    print_blue "Available images: \n"
+    for image in ${IMAGES}; do
+        tag=$(get_tag ${image})
+        echo " * ${image}:${tag:-latest}"
+    done
+}
+
+image_exists() { ## image_exists <image>
+    # dir exists
+    if [[ -d ./$1 ]]; then
+        ok_message "Directory $1 exists."
+    else
+        error_message "Directory $(print_yellow $1) doesn't exists." exit_on_error
+    fi
+    # Dockerfile exists and is not empty
+    if [[ -s ./$1/Dockerfile ]]; then
+        ok_message "$1/Dockerfile exists and is not empty."
+    else
+        error_message "$(print_yellow $1/Dockerfile) doesn't exists or it is empty." exit_on_error
+    fi
+}
+
+_build() { ## _build <image> <tag> <exit_on_error>
+    local image=$1
+    local _tag=$2
+    local exit_on_error=$3
+
+    print_blue "Let's start building "; echo $image
+    (image_exists $image) && {
+        if [[ "${_tag}" = "_autotag" ]]; then
+            local tag="$(get_tag $image)"
+            if [[ $tag = "" ]]; then
+                error_message "Could not set the docker image tag properly." ${exit_on_error}
+            fi
+        else
+            local tag="${_tag}"
+        fi
+        cd $image && docker build -t ${REPO_USERNAME}/$image:$tag .
+        ok_message "Done! \n";
+    } || {
+        error_message "Could not build $(print_yellow $image)." ${exit_on_error}
+    }
+}
+
+_image_required() {
+    if [ -z ${1+x} ]; then
+        error_message "You must type the image name." exit_on_error
+    fi
+}
+
+build() { ## build <image>
+    _image_required $1
+    _build $1 latest exit_on_error
+}
+
+build_all() {
+    for image in ${IMAGES}; do
+        cd ${ROOT_DIR}
+        _build $image latest
+    done
+}
+
+tag() { ## tag <image>
+    _image_required $1
+    _build $1 _autotag exit_on_error
+}
+
+run() {
+    case "$1" in
+        (build_all|tag_all|list_images|help) $1;;
+        (build|tag) $1 $2;;
+        (*) echo "Command not found, see what you can do by typing:";
+            print_yellow "$0 help \n";
+            exit 2;;
+    esac
+}
+
+run $@
