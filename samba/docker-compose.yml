@@ -1,0 +1,19 @@
+version: "2"
+
+volumes:
+  # Remember to delete config_data if you edit the Dockerfile
+  # where it makes changes on /etc/samba/smb.conf
+  config_data: {}
+
+services:
+  file_server:
+    # image: douglasmiranda/samba
+    build: .
+    volumes:
+      - config_data:/etc/samba/
+      - ./:/mount/
+    ports:
+      - "139:139"
+      - "445:445"
+      # - "137:137/udp"
+      # - "138:138/udp"
