@@ -1,0 +1,17 @@
+version: "2"
+
+volumes:
+  # data: {}
+  database: {}
+
+services:
+  app:
+    # image: douglasmiranda/filemanager
+    build: .
+    volumes:
+      - database:/app/database/
+      - ./:/app/data/
+      # - data:/app/data/
+      # - /local/existing/path/:/app/data/
+    ports:
+      - "8000:8000"

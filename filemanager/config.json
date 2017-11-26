@@ -1,0 +1,10 @@
+{
+  "port": 8000,
+  "address": "",
+  "database": "/app/database/database.db",
+  "scope": "/app/data",
+  "allowCommands": true,
+  "allowEdit": true,
+  "allowNew": true,
+  "commands": []
+}
