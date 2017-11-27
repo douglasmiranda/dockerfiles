@@ -1,0 +1,11 @@
+version: "2"
+
+services:
+  afp_file_server:
+    # image: douglasmiranda/netatalk
+    build: .
+    volumes:
+      - ./:/media/
+    ports:
+      - "548:548"
+      - "5353:5353/udp"
