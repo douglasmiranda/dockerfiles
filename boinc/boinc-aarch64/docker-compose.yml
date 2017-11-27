@@ -1,0 +1,14 @@
+version: "2"
+
+volumes:
+  # Remember to delete boinc_data if you edit the Dockerfile
+  boinc_data: {}
+
+services:
+  client:
+    # image: douglasmiranda/boinc
+    build: .
+    volumes:
+      - boinc_data:/boinc-data
+    ports:
+      - "31416:31416"

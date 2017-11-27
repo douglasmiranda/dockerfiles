@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# stop the error messages on log
+mkdir -p /dev/input/mice
+mkdir -p /boinc-data/locale
+
+# enable armhf architecture
+if ! [[ -s /boinc-data/cc_config.xml ]]; then
+echo "<cc_config>
+  <log_flags>
+    <task>1</task>
+    <file_xfer>1</file_xfer>
+    <sched_ops>1</sched_ops>
+  </log_flags>
+  <options>
+    <alt_platform>arm-unknown-linux-gnueabihf</alt_platform>
+  </options>
+</cc_config>" > /boinc-data/cc_config.xml
+fi
+
+exec boinc --allow_remote_gui_rpc --dir /boinc-data
