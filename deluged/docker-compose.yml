@@ -1,0 +1,16 @@
+version: "2"
+
+volumes:
+  config_data: {}
+
+services:
+  deluged:
+    # image: douglasmiranda/deluged
+    build: .
+    volumes:
+      # - "./config:/config"
+      - "config_data:/config"
+      - "./downloads:/downloads"
+    ports:
+      - "58846:58846"
+      - "58946:58946/udp"
