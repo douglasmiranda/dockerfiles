@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+if [ "$1" = 'deluged' ]; then
+    chown -R nobody:nogroup /config
+    chown -R nobody:nogroup /downloads
+
+    exec gosu nobody "$@"
+fi
+
+exec "$@"
