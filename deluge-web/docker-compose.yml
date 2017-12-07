@@ -1,0 +1,26 @@
+version: "2"
+
+volumes:
+  config_data: {}
+
+services:
+  deluged:
+    # douglasmiranda/deluged still doesn't exists on dockerhub
+    # for now just get and build from the deluged Dockerfile on
+    # https://github.com/douglasmiranda/dockerfiles/tree/master/deluged
+    image: douglasmiranda/deluged
+    volumes:
+      # - "./config:/config"
+      - "config_data:/config"
+      - "./downloads:/downloads"
+    ports:
+      - "58846:58846"
+      - "58946:58946/udp"
+
+  deluged-web:
+    # image: douglasmiranda/deluge-web
+    build: .
+    volumes:
+      - "config_data:/config"
+    ports:
+      - "8112:8112"
