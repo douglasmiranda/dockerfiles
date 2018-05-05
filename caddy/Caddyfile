@@ -1,0 +1,8 @@
+localhost:80 {
+	root /var/www
+	ext .html
+	log stdout
+	errors stdout
+	gzip
+	browse
+}
