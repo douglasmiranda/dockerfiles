@@ -4,7 +4,7 @@
 # https://docs.docker.com/compose/compose-file/#args
 # https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
 # https://docs.docker.com/engine/reference/builder/#arg
-ARG CADDY_VERSION=0.10.14
+ARG CADDY_VERSION=0.11.0
 FROM golang:1.10-alpine as builder
 
 RUN apk add --no-cache git gcc musl-dev
@@ -29,14 +29,16 @@ ARG CADDY_VERSION
 LABEL caddy_version="$CADDY_VERSION"
 
 RUN apk add --no-cache ca-certificates openssh-client libcap \
-    && addgroup -S caddy && adduser -S -G caddy caddy
+    && addgroup caddy && adduser -D -G caddy caddy
 
 COPY --from=builder /go/src/github.com/mholt/caddy/caddy/caddy /usr/bin/caddy
 
 RUN mkdir -p /var/www \
-    && chown caddy:caddy /var/www \
+    && chown -R caddy:caddy /var/www \
     && setcap 'cap_net_bind_service=+ep' /usr/bin/caddy \
-    && echo "Hello, Caddy is running. Serving this file: /var/www/index.html" > /var/www/index.html
+    && echo "Hello, Caddy is running. Serving this file: /var/www/index.html" > /var/www/index.html \
+    && mkdir -p /home/caddy/.caddy \
+    && chown -R caddy:caddy /home/caddy/.caddy
 
 COPY Caddyfile /etc/caddy/Caddyfile
 
