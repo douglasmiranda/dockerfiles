@@ -1,0 +1,33 @@
+# An example auth_config.yml with documentation can be found here: https://github.com/cesanta/docker_auth/blob/master/examples/reference.yml
+
+# Keep this server block the same
+server:
+  addr: ":5001"
+  certificate: "/ssl/server.pem"
+  key: "/ssl/server.key"
+  real_ip_header: "X-Forwarded-For"
+
+# Keep this token block the same
+token:
+  issuer: "Auth Service"
+  expiration: 1200
+
+# External authentication - call an external progam to authenticate user.
+# Username and password are passed to command's stdin and exit code is examined.
+# 0 - allow, 1 - deny, 2 - no match, other - error.
+# In case of success, if any output is returned, it is parsed as a JSON object.
+# The "labels" key may contain labels to be passed down to authz, where they can
+# be used in matching. See ext_auth.sh for an example.
+ext_auth:
+  command: "rauthz"
+  args: ["login"]
+
+acl:
+  # Admin has full access to everything.
+  - match: {account: "admin"}
+    actions: ["*"]
+
+  # Other users have access to pull from their namespace
+  - match: {account: "/.+/", name: "${account}/*"}
+    actions: ["pull"]
+    comment: "Logged in users have pull access to images that are in their 'namespace'"

@@ -1,0 +1,74 @@
+version: '3.6'
+
+services:
+  caddy:
+    image: douglasmiranda/caddy
+    volumes:
+      # certificates will be stored at /home/caddy/.caddy
+      - caddy:/home/caddy/.caddy
+      - ./Caddyfile:/etc/caddy/Caddyfile
+    environment:
+      - SITE=http://localhost
+      # PRODUCTION:
+      # - SITE=http://my-registry.com
+      # - EMAIL_TLS=a@b.com
+    ports:
+      - "80:80"
+      - "443:443"
+
+  # https://github.com/cesanta/docker_auth#installation-and-examples
+  auth-server:
+    image: douglasmiranda/rauthz
+    volumes:
+      # since I'm using htpasswd to create users, you'll find the htpasswd file
+      # named "users" at /auth_server
+      # want to backup the users databse? Just backup: /auth_server/users
+      - auth-server-data:/auth_server
+    secrets:
+      - source: ssl_server_key
+        target: /ssl/server.key
+      - source: ssl_server_pem
+        target: /ssl/server.pem
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider https://127.0.0.1:5001 || exit 1"
+    command:
+      - auth_server
+      - --v=2
+      - --alsologtostderr
+      - /etc/docker_auth/auth_config.yml
+
+  # http://docs.drone.io/install-for-gitlab/
+  registry:
+    image: registry:2
+    environment:
+      - REGISTRY_AUTH=token
+      - REGISTRY_AUTH_TOKEN_REALM=http://localhost/auth
+      # PRODUCTION:
+      # - REGISTRY_AUTH_TOKEN_REALM=http://my-registry.com/auth
+      - REGISTRY_AUTH_TOKEN_SERVICE="Docker registry"
+      - REGISTRY_AUTH_TOKEN_ISSUER="Auth Service"
+      - REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/ssl/server.pem
+    volumes:
+      - registry-data:/var/lib/registry
+    secrets:
+      - source: ssl_server_key
+        target: /ssl/server.key
+      - source: ssl_server_pem
+        target: /ssl/server.pem
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget -s http://127.0.0.1:5000 || exit 1"
+
+volumes:
+  caddy: {}
+  registry-data: {}
+  auth-server-data: {}
+
+secrets:
+  ssl_server_key:
+    file: ./auth_server/ssl/server.key
+  ssl_server_pem:
+    file: ./auth_server/ssl/server.pem

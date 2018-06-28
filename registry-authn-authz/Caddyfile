@@ -1,0 +1,14 @@
+{$SITE} {
+    proxy /auth https://auth-server:5001 {
+        transparent
+        insecure_skip_verify
+    }
+    proxy /v2 registry:5000 {
+        websocket
+        transparent
+    }
+    timeouts none
+    log stdout
+    errors stdout
+    tls {$EMAIL_TLS}
+}

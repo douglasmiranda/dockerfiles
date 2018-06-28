@@ -1,0 +1,50 @@
+#!/bin/sh
+
+HTPASSWD_FILE=/auth_server/users
+
+login() {
+    read u p
+
+    # docker_auth exit codes:
+    # 0 - allow, 1 - deny, 2 - no match, other - error.
+    htpasswd -vBb ${HTPASSWD_FILE} $u $p
+    auth_result=$?
+
+    if [ "$auth_result" == "0" ]; then
+        exit 0
+    elif [ "$auth_result" == "3" ]; then
+        # the exit code for no match in htpasswd is 3
+        # but for docker_auth must be 2
+        exit 2
+    fi
+
+    exit 1
+}
+
+user_add() {
+    if [ ! -f ${HTPASSWD_FILE} ]; then
+        htpasswd -cB ${HTPASSWD_FILE} $@
+    else
+        htpasswd -B ${HTPASSWD_FILE} $@
+    fi
+}
+
+user_delete() {
+    htpasswd -D ${HTPASSWD_FILE} $@
+}
+
+user_update_password() {
+    htpasswd -B ${HTPASSWD_FILE} $@
+}
+
+if [ "$1" == "login" ]; then
+    login $2 $3
+elif [ "$1" == "user" ]; then
+    if [ "$2" == "add" ]; then
+        user_add $3
+    elif [ "$2" == "update" ]; then
+        user_update_password $3
+    elif [ "$2" == "delete" ]; then
+        user_delete $3
+    fi
+fi
