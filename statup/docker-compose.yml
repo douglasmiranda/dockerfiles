@@ -1,0 +1,15 @@
+# I'm just using the simple version
+# when you access the localhost:80, you'll be on the setup page
+# just choose sqlite as your database.
+version: '3.6'
+
+services:
+  statup:
+    image: douglasmiranda/statup
+    ports:
+      - 0.0.0.0:80:8080
+    volumes:
+      - statup_data:/statup
+
+volumes:
+  statup_data: {}
