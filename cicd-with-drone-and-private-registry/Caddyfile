@@ -1,0 +1,32 @@
+https://drone.YOURDOMAIN.com {
+    proxy / drone-server:8000 {
+        websocket
+        transparent
+    }
+    gzip {
+        not /stream/
+    }
+    header / Strict-Transport-Security "max-age=31536000;"
+    log stdout
+    errors stdout
+    tls YOUR_EMAIL
+}
+
+https://r.YOURDOMAIN.com {
+    proxy /auth https://auth-server:5001 {
+        transparent
+        insecure_skip_verify
+    }
+    proxy /v2 registry:5000 {
+        websocket
+        transparent
+    }
+    proxy /minio minio:9000 {
+        transparent
+    }
+    header / Strict-Transport-Security "max-age=31536000;"
+    timeouts none
+    log stdout
+    errors stdout
+    tls YOUR_EMAIL
+}

@@ -1,0 +1,89 @@
+version: '3.6'
+
+# Better setup for secrets needed: https://github.com/docker/distribution/issues/2483
+
+services:
+  # http://docs.drone.io/install-for-gitlab/
+  registry:
+    image: registry:2
+    environment:
+      # https://github.com/docker/distribution/blob/v2.6.2/docs/configuration.md#override-specific-configuration-options
+      REGISTRY_AUTH: token
+      REGISTRY_AUTH_TOKEN_REALM: https://r.YOURDOMAIN.com/auth
+      REGISTRY_AUTH_TOKEN_SERVICE: "Docker registry"
+      REGISTRY_AUTH_TOKEN_ISSUER: "Auth Service"
+      REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE: /ssl/server.pem
+      # Common issues for remote storage:
+      # https://gist.github.com/douglasmiranda/8510147c901d4ec2c7655ad7b646b51b
+      REGISTRY_STORAGE: s3
+      REGISTRY_STORAGE_S3_REGION: us-west-1
+      REGISTRY_STORAGE_S3_BUCKET: registry
+      REGISTRY_STORAGE_S3_V4AUTH: "true"
+      REGISTRY_STORAGE_S3_ENCRYPT: "false"
+      REGISTRY_STORAGE_S3_SECURE: "false"
+      REGISTRY_STORAGE_REDIRECT_DISABLE: "true"
+      REGISTRY_STORAGE_S3_REGIONENDPOINT: http://minio:9000
+      REGISTRY_STORAGE_S3_ACCESSKEY: YOUR MINIO ACCESSKEY, MUST BE THE SAME USED IN minio
+      REGISTRY_STORAGE_S3_SECRETKEY: YOUR MINIO SECRETKEY, MUST BE THE SAME USED IN minio
+    secrets:
+      - source: ssl_server_key
+        target: /ssl/server.key
+      - source: ssl_server_pem
+        target: /ssl/server.pem
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget -s http://127.0.0.1:5000 || exit 1"
+
+  # https://github.com/cesanta/docker_auth#installation-and-examples
+  auth-server:
+    image: douglasmiranda/rauthz
+    volumes:
+      # since I'm using htpasswd to create users, you'll find the htpasswd file
+      # named "users" at /auth_server
+      # want to backup the users database? Just backup: /auth_server/users
+      - auth-server-data:/auth_server
+    secrets:
+      - source: ssl_server_key
+        target: /ssl/server.key
+      - source: ssl_server_pem
+        target: /ssl/server.pem
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider https://127.0.0.1:5001 || exit 1"
+    command:
+      - auth_server
+      - --v=2
+      - --alsologtostderr
+      - /etc/docker_auth/auth_config.yml
+
+  # Using minio as storage for Docker Registry
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ACCESS_KEY: YOUR MINIO ACCESSKEY
+      MINIO_SECRET_KEY: YOUR MINIO SECRET KEY
+    volumes:
+      - minio-data:/data
+    ports:
+      - 9000
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+    command:
+      - server
+      - /data
+
+volumes:
+  registry-data: {}
+  auth-server-data: {}
+  minio-data: {}
+
+secrets:
+  # Check Makefile and you'll see how to generate this certificates.
+  ssl_server_key:
+    file: ./auth_server/ssl/server.key
+  ssl_server_pem:
+    file: ./auth_server/ssl/server.pem
