@@ -1,5 +1,5 @@
 # https://github.com/hunterlong/statup/releases
-ARG RELEASE=v0.35
+ARG RELEASE=v0.51
 # docker run -p 80:8080 douglasmiranda/statup
 FROM alpine
 
