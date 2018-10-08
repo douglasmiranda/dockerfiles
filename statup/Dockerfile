@@ -6,7 +6,7 @@ RUN apk add --no-cache ca-certificates \
     && chown -R nobody /statup
 
 # https://github.com/hunterlong/statup/releases
-ARG RELEASE=v0.52
+ARG RELEASE=v0.74
 ADD https://github.com/hunterlong/statup/releases/download/${RELEASE}/statup-linux-alpine.tar.gz /statup.tar.gz
 
 RUN tar -xzf /statup.tar.gz -C /usr/local/bin/ \
