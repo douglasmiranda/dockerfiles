@@ -1,0 +1,57 @@
+version: '3.6'
+
+# Better setup for secrets needed: https://github.com/drone/drone/issues/2223
+
+services:
+  drone-server:
+    image: drone/drone:0.8-alpine
+    ports:
+      - 8000
+      - 9000
+    volumes:
+      - drone-data:/var/lib/drone/
+    environment:
+      GIN_MODE: release
+      DRONE_OPEN: "true"
+      DRONE_GITLAB: "true"
+      # http://docs.drone.io/user-registration/
+      DRONE_ORGS: YOUR ORGS. Users from the orgs will be able to sign in.
+      DRONE_ADMIN: YOUR USERNAME
+      DRONE_HOST: https://drone.YOURDOMAIN.com
+      # https://gitlab.com/profile/applications
+      DRONE_GITLAB_CLIENT: YOUR GITLAB CLIENT
+      DRONE_GITLAB_SECRET: YOUR GITLAB SECRET
+      DRONE_SECRET: YOUR DRONE SECRET, MUST BE THE SAME USED IN YOUR drone-agent
+      # needed for docker swarm:
+      DRONE_KEEPALIVE_MIN_TIME: 5s
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider http://localhost:8000 || exit 1"
+    deploy:
+      placement:
+        constraints:
+          - node.role == manager
+
+  drone-agent:
+    image: drone/agent:0.8-alpine
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      DRONE_SERVER: drone-server:9000
+      DRONE_SECRET: YOUR DRONE SECRET, MUST BE THE SAME USED IN YOUR drone-server
+      # needed for docker swarm:
+      DRONE_KEEPALIVE_TIME: 20s
+      DRONE_KEEPALIVE_TIMEOUT: 20s
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          # (50%) of available processing time
+          cpus: '0.50'
+      update_config:
+        parallelism: 1
+        delay: 10s
+
+volumes:
+  drone-data: {}
