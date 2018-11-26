@@ -1,57 +1,39 @@
 version: '3.6'
 
-# Better setup for secrets needed: https://github.com/drone/drone/issues/2223
+# Better setup for secrets is needed: https://github.com/drone/drone/issues/2223
 
 services:
-  drone-server:
-    image: drone/drone:0.8-alpine
+  drone:
+    image: drone/drone:1.0.0-rc.1
     ports:
-      - 8000
-      - 9000
+      - 80
     volumes:
-      - drone-data:/var/lib/drone/
+      - /var/run/docker.sock:/var/run/docker.sock
+      - drone-data:/data
+    # https://readme.drone.io/reference/server/
     environment:
-      GIN_MODE: release
-      DRONE_OPEN: "true"
-      DRONE_GITLAB: "true"
-      # http://docs.drone.io/user-registration/
-      DRONE_ORGS: YOUR ORGS. Users from the orgs will be able to sign in.
-      DRONE_ADMIN: YOUR USERNAME
-      DRONE_HOST: https://drone.YOURDOMAIN.com
-      # https://gitlab.com/profile/applications
-      DRONE_GITLAB_CLIENT: YOUR GITLAB CLIENT
-      DRONE_GITLAB_SECRET: YOUR GITLAB SECRET
-      DRONE_SECRET: YOUR DRONE SECRET, MUST BE THE SAME USED IN YOUR drone-agent
-      # needed for docker swarm:
-      DRONE_KEEPALIVE_MIN_TIME: 5s
+      DRONE_SERVER_HOST: drone.YOURDOMAIN.com
+      DRONE_SERVER_PROTO: https
+      DRONE_GIT_ALWAYS_AUTH: "false"
+      DRONE_RUNNER_CAPACITY: 2
+      DRONE_TLS_AUTOCERT: "false"
+      # filter by user or organizations
+      DRONE_USER_FILTER: MYUSER,MYORGANIZATION
+      # Set the ADMIN user, this user can change sensitive settings in Drone UI and CLI
+      DRONE_USER_CREATE: username:GITLAB_USERNAME,machine:false,admin:true
+      # https://readme.drone.io/intro/gitlab/
+      DRONE_GITLAB_CLIENT_ID: DRONE_GITLAB_CLIENT_ID
+      DRONE_GITLAB_CLIENT_SECRET: DRONE_GITLAB_CLIENT_SECRET
+      # https://readme.drone.io/install/server/storage/encryption/
+      DRONE_DATABASE_SECRET: DRONE_DATABASE_SECRET
     healthcheck:
       test:
         - "CMD-SHELL"
-        - "wget --spider http://localhost:8000 || exit 1"
+        - "wget --spider http://localhost:80 || exit 1"
     deploy:
       placement:
         constraints:
           - node.role == manager
-
-  drone-agent:
-    image: drone/agent:0.8-alpine
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    environment:
-      DRONE_SERVER: drone-server:9000
-      DRONE_SECRET: YOUR DRONE SECRET, MUST BE THE SAME USED IN YOUR drone-server
-      # needed for docker swarm:
-      DRONE_KEEPALIVE_TIME: 20s
-      DRONE_KEEPALIVE_TIMEOUT: 20s
-    deploy:
-      replicas: 2
-      resources:
-        limits:
-          # (50%) of available processing time
-          cpus: '0.50'
-      update_config:
-        parallelism: 1
-        delay: 10s
 
 volumes:
   drone-data: {}
