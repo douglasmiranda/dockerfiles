@@ -4,8 +4,8 @@
 # https://docs.docker.com/compose/compose-file/#args
 # https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
 # https://docs.docker.com/engine/reference/builder/#arg
-ARG CADDY_VERSION=0.11.0
-FROM golang:1.10-alpine as builder
+ARG CADDY_VERSION=0.11.1
+FROM golang:1.11-alpine as builder
 
 RUN apk add --no-cache git gcc musl-dev
 
@@ -23,7 +23,7 @@ RUN go run build.go -goos=$(go env GOOS) -goarch=$(go env GOARCH) -goarm=$(go en
 
 # Final stage
 # Caddy running with unprivileged user
-FROM alpine:3.7
+FROM alpine:3.8
 
 ARG CADDY_VERSION
 LABEL caddy_version="$CADDY_VERSION"
