@@ -1,0 +1,9 @@
+localhost:80 {
+	proxy / flask:8000 {
+		transparent
+	}
+
+	cache
+	log stdout
+	errors stdout
+}
