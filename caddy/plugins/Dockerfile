@@ -4,6 +4,7 @@
 # https://docs.docker.com/compose/compose-file/#args
 # https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
 # https://docs.docker.com/engine/reference/builder/#arg
+# Build: docker build --build-arg PLUGINS=cache,cloudflare -t douglasmiranda/caddy:cache .
 ARG CADDY_VERSION=0.11.1
 FROM golang:1.11-alpine as builder
 
