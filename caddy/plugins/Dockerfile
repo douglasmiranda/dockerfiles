@@ -4,7 +4,6 @@
 # https://docs.docker.com/compose/compose-file/#args
 # https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
 # https://docs.docker.com/engine/reference/builder/#arg
-# Build: docker build -t douglasmiranda/caddy .
 ARG CADDY_VERSION=0.11.1
 FROM golang:1.11-alpine as builder
 
@@ -16,6 +15,16 @@ RUN git clone https://github.com/mholt/caddy -b "v$CADDY_VERSION" --single-branc
 
 # builder dependency
 RUN git clone https://github.com/caddyserver/builds /go/src/github.com/caddyserver/builds
+
+# https://github.com/abiosoft/caddyplug
+RUN go get -v github.com/abiosoft/caddyplug/caddyplug
+
+ARG PLUGINS
+RUN for plugin in $(echo $PLUGINS | tr "," " "); do \
+    go get -v $(caddyplug package $plugin); \
+    printf "package caddyhttp\nimport _ \"$(caddyplug package $plugin)\"" > \
+        $GOPATH/src/github.com/mholt/caddy/caddyhttp/$plugin.go ; \
+    done
 
 # build
 WORKDIR /go/src/github.com/mholt/caddy/caddy
