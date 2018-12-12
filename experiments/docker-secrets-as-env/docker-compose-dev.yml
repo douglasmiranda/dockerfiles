@@ -1,0 +1,20 @@
+version: "3.6"
+
+services:
+  docker-secret-experiment-dev:
+    build: ./
+    volumes:
+      - ./:/experiment
+    working_dir: /experiment
+    environment:
+      PARSE_SECRETS_DEBUG: "true"
+    secrets:
+      - SECRET_1
+      - SECRET_2
+    command: ['sh', '-c', 'echo "just running my Docker Secrets Experiment dev container"; trap "exit 0" SIGTERM; while true; do sleep 3; done']
+
+secrets:
+  SECRET_1:
+    file: ./secret1.txt
+  SECRET_2:
+    file: ./secret2.txt

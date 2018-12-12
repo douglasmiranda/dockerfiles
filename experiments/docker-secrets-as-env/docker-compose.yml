@@ -1,0 +1,44 @@
+version: "3.6"
+
+# Before you run this Docker Compose file, build the image.
+# The Dockerfile is inside the same directory as this current file.
+# docker build -t douglasmiranda/experiment-docker-secrets .
+# OR just pull from my dockerhub xD
+
+services:
+  simple:
+    image: douglasmiranda/experiment-docker-secrets
+    secrets:
+      - SECRET_1
+      - SECRET_2
+    # I'm just using `printenv` as command so you can see the secrets as
+    # environment variables.
+    command: [printenv]
+
+  debug:
+    image: douglasmiranda/experiment-docker-secrets
+    environment:
+      PARSE_SECRETS_DEBUG: "true"
+    secrets:
+      - SECRET_1
+      - SECRET_2
+
+  custom-docker-secrets-dir:
+    image: douglasmiranda/experiment-docker-secrets
+    environment:
+      DOCKER_SECRETS_DIR: "/secrets"
+    secrets:
+      - source: SECRET_1
+        target: /secrets/SECRET_1
+      - source: SECRET_2
+        target: /secrets/SECRET_2
+    # I'm just using `printenv` as command so you can see the secrets as
+    # environment variables.
+    command: [printenv]
+
+
+secrets:
+  SECRET_1:
+    file: ./secret1.txt
+  SECRET_2:
+    file: ./secret2.txt
