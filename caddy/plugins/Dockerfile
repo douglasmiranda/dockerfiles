@@ -27,6 +27,12 @@ RUN for plugin in $(echo $PLUGINS | tr "," " "); do \
         $GOPATH/src/github.com/mholt/caddy/caddyhttp/$plugin.go ; \
     done
 
+# Using an older version of github.com/xenolf/lego dependency
+# the new one breaks for now.
+RUN if [[ -d /go/src/github.com/xenolf/lego ]]; then \
+        cd /go/src/github.com/xenolf/lego && git checkout "4e842a5eb6dcb9520e03db70cd5896f1df14b72a"; \
+    fi
+
 # build
 WORKDIR /go/src/github.com/mholt/caddy/caddy
 RUN go run build.go -goos=$(go env GOOS) -goarch=$(go env GOARCH) -goarm=$(go env GOARM)
@@ -36,27 +42,36 @@ RUN go run build.go -goos=$(go env GOOS) -goarch=$(go env GOARCH) -goarm=$(go en
 # Caddy running with unprivileged user
 FROM alpine:3.8
 
+ARG PLUGINS
 ARG CADDY_VERSION
-LABEL caddy_version="$CADDY_VERSION"
-
-RUN apk add --no-cache ca-certificates openssh-client libcap \
-    && addgroup caddy && adduser -D -G caddy caddy
+LABEL \
+  org.opencontainers.image.title="Caddy Web Server with plugins (${PLUGINS})" \
+  org.opencontainers.image.authors="Douglas Miranda <douglascoding@gmail.com>" \
+  org.opencontainers.image.version="${CADDY_VERSION}" \
+  org.opencontainers.image.licenses="MIT" \
+  org.opencontainers.image.url="https://hub.docker.com/r/douglasmiranda/caddy/" \
+  org.opencontainers.image.documentation="https://github.com/douglasmiranda/dockerfiles/tree/master/caddy/plugins" \
+  org.opencontainers.image.source="https://github.com/douglasmiranda/dockerfiles/blob/master/caddy/plugins/Dockerfile"
 
 COPY --from=builder /go/src/github.com/mholt/caddy/caddy/caddy /usr/bin/caddy
-
-RUN mkdir -p /var/www \
-    && chown -R caddy:caddy /var/www \
-    && setcap 'cap_net_bind_service=+ep' /usr/bin/caddy \
-    && echo "Hello, Caddy is running. Serving this file: /var/www/index.html" > /var/www/index.html \
-    && mkdir -p /home/caddy/.caddy \
-    && chown -R caddy:caddy /home/caddy/.caddy
-
+ADD https://raw.githubusercontent.com/douglasmiranda/dockerfiles/master/experiments/docker-secrets-as-env/docker-secrets-to-env-var.sh /home/caddy/docker-secrets-to-env-var.sh
+ADD https://raw.githubusercontent.com/douglasmiranda/dockerfiles/master/experiments/docker-secrets-as-env/entrypoint.sh /home/caddy/entrypoint.sh
 COPY Caddyfile /etc/caddy/Caddyfile
 
-VOLUME ["/home/caddy/.caddy", "/etc/caddy", "/var/www"]
-EXPOSE 80 443 2015
+# /var/www: will store our "hello world" file
+# /home/caddy/.caddy: Caddy will use this dir, storing certificates and other stuff
+RUN apk add --no-cache ca-certificates openssh-client libcap \
+    && addgroup caddy && adduser -D -G caddy caddy \
+    && mkdir -p /var/www /home/caddy/.caddy \
+    && echo "Hello, Caddy is running. Serving this file: /var/www/index.html" > /var/www/index.html \
+    && chown -R caddy:caddy /home/caddy /var/www \
+    && chmod +x /home/caddy/entrypoint.sh \
+    # allowing unprivileged user to listen to ports below 1024
+    && setcap 'cap_net_bind_service=+ep' /usr/bin/caddy
 
 USER caddy
+VOLUME ["/home/caddy/.caddy", "/etc/caddy", "/var/www"]
+EXPOSE 80 443 2015
 WORKDIR /home/caddy
-ENTRYPOINT ["caddy"]
-CMD ["--conf", "/etc/caddy/Caddyfile", "--log", "stdout", "--agree=true"]
+ENTRYPOINT ["/home/caddy/entrypoint.sh"]
+CMD ["caddy", "--conf", "/etc/caddy/Caddyfile", "--log", "stdout", "--agree=true"]
