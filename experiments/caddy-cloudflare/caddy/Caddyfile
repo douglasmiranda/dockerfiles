@@ -1,0 +1,11 @@
+https://c.devc.sh {
+	root /var/www
+	ext .html
+	log stdout
+	errors stdout
+	gzip
+	browse
+	tls {
+		dns cloudflare
+	}
+}

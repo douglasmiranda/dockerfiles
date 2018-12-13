@@ -1,0 +1,25 @@
+version: "3.6"
+
+services:
+  caddy:
+    image: douglasmiranda/caddy:cloudflare
+    volumes:
+      - caddy-cloudflare:/home/caddy/.caddy
+      - ./caddy/:/etc/caddy/
+    environment:
+      CLOUDFLARE_EMAIL: YOUR-EMAIL
+      CLOUDFLARE_API_KEY: YOUR-API-KEY
+    ports:
+      - "80:80"
+      - "443:443"
+    # Since this is for testing:
+    # I'm stopping the auto restart when failing because if Caddy fails when trying to issue
+    # an certificate it will try over and over again, until reach the limit of Let's Encrypt API.
+    # Of course in production you may want to change the restart_policy.
+    # https://docs.docker.com/compose/compose-file/#restart_policy
+    deploy:
+      restart_policy:
+        condition: none
+
+volumes:
+  caddy-cloudflare: {}
