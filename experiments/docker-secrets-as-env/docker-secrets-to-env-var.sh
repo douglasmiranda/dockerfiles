@@ -57,7 +57,11 @@ auto_set_env_vars() {
     done
 }
 
-auto_set_env_vars $DOCKER_SECRETS_DIR
+if [[ -d $DOCKER_SECRETS_DIR ]]; then
+    auto_set_env_vars $DOCKER_SECRETS_DIR
+else
+    env_secret_debug "$DOCKER_SECRETS_DIR doesn't exist."
+fi
 
 if [ "$PARSE_SECRETS_DEBUG" = "true" ]; then
     echo -e "\n\033[1mExpanded environment variables\033[0m"
