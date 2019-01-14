@@ -1,0 +1,42 @@
+version: "3.7"
+
+services:
+  flask:
+    image: experiment--docker-caddy-flask-replicated
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - "wget --spider http://localhost:8000 || exit 1"
+    deploy:
+      mode: replicated
+      replicas: 6
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 40s
+      rollback_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+      update_config:
+        parallelism: 2
+        delay: 10s
+        order: stop-first
+        failure_action: rollback
+
+  caddy:
+    image: douglasmiranda/caddy
+    # You could simply use a volume, like this:
+    # - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+    # Or build your own Docker image for Caddy and add your Caddyfile.
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    ports:
+      - "80:80"
+
+# https://docs.docker.com/compose/compose-file/#configs
+configs:
+  caddyfile:
+    file: ./caddy/Caddyfile
