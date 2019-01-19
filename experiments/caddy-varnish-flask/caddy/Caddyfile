@@ -1,0 +1,8 @@
+localhost:80 {
+	proxy / varnish:80 {
+		transparent
+	}
+
+	log stdout
+	errors stdout
+}

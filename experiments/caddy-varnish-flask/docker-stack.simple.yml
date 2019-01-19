@@ -1,0 +1,43 @@
+version: "3.7"
+
+services:
+  flask:
+    image: experiment--caddy-varnish-flask
+
+  varnish:
+    image: experiment--caddy-varnish-flask-varnish
+    # You could simply use a volume, like this:
+    # - ./varnish/:/etc/varnish/
+    # Or build your own Docker image for Caddy and add your Caddyfile.
+    configs:
+      - source: varnish_config
+        target: /etc/varnish/default.vcl
+    command:
+      - /usr/sbin/varnishd
+      - -j
+      - unix,user=varnish
+      - -F
+      - -f
+      - /etc/varnish/default.vcl
+      - -a
+      - 0.0.0.0:80
+      - -s
+      - malloc,100M
+
+  caddy:
+    image: douglasmiranda/caddy
+    # You could simply use a volume, like this:
+    # - ./caddy/:/etc/caddy/
+    # Or build your own Docker image for Caddy and add your Caddyfile.
+    configs:
+      - source: caddyfile
+        target: /etc/caddy/Caddyfile
+    ports:
+      - "80:80"
+
+# https://docs.docker.com/compose/compose-file/#configs
+configs:
+  caddyfile:
+    file: ./caddy/Caddyfile
+  varnish_config:
+    file: ./varnish/default.vcl
