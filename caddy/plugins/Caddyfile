@@ -1,5 +1,4 @@
 localhost:80 {
-	cache
 	root /var/www
 	ext .html
 	log stdout
