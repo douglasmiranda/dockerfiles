@@ -54,8 +54,8 @@ LABEL \
   org.opencontainers.image.source="https://github.com/douglasmiranda/dockerfiles/blob/master/caddy/plugins/Dockerfile"
 
 COPY --from=builder /go/src/github.com/mholt/caddy/caddy/caddy /usr/bin/caddy
-ADD https://raw.githubusercontent.com/douglasmiranda/dockerfiles/master/experiments/docker-secrets-as-env/docker-secrets-to-env-var.sh /home/caddy/docker-secrets-to-env-var.sh
-ADD https://raw.githubusercontent.com/douglasmiranda/dockerfiles/master/experiments/docker-secrets-as-env/entrypoint.sh /home/caddy/entrypoint.sh
+ADD https://raw.githubusercontent.com/douglasmiranda/lab/master/docker-secrets-as-env/docker-secrets-to-env-var.sh /home/caddy/docker-secrets-to-env-var.sh
+ADD https://raw.githubusercontent.com/douglasmiranda/lab/master/docker-secrets-as-env/entrypoint.sh /home/caddy/entrypoint.sh
 COPY Caddyfile /etc/caddy/Caddyfile
 
 # /var/www: will store our "hello world" file
