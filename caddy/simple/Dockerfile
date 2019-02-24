@@ -4,9 +4,9 @@
 # https://docs.docker.com/compose/compose-file/#args
 # https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
 # https://docs.docker.com/engine/reference/builder/#arg
-# Build: docker build -t douglasmiranda/caddy .
+# Build: docker build --target=production -t douglasmiranda/caddy .
 # Run: docker run --rm -p "80:80" douglasmiranda/caddy
-ARG CADDY_VERSION=0.11.1
+ARG CADDY_VERSION=0.11.4
 FROM golang:1.11-alpine as builder
 
 RUN apk add --no-cache git gcc musl-dev
@@ -25,7 +25,7 @@ RUN go run build.go -goos=$(go env GOOS) -goarch=$(go env GOARCH) -goarm=$(go en
 
 # Final stage
 # Caddy running with unprivileged user
-FROM alpine:3.8
+FROM alpine:3.8 as production
 
 ARG CADDY_VERSION
 LABEL \
@@ -38,8 +38,8 @@ LABEL \
   org.opencontainers.image.source="https://github.com/douglasmiranda/dockerfiles/blob/master/caddy/simple/Dockerfile"
 
 COPY --from=builder /go/src/github.com/mholt/caddy/caddy/caddy /usr/bin/caddy
-ADD https://raw.githubusercontent.com/douglasmiranda/dockerfiles/master/experiments/docker-secrets-as-env/docker-secrets-to-env-var.sh /home/caddy/docker-secrets-to-env-var.sh
-ADD https://raw.githubusercontent.com/douglasmiranda/dockerfiles/master/experiments/docker-secrets-as-env/entrypoint.sh /home/caddy/entrypoint.sh
+ADD https://raw.githubusercontent.com/douglasmiranda/lab/master/docker-secrets-as-env/docker-secrets-to-env-var.sh /home/caddy/docker-secrets-to-env-var.sh
+ADD https://raw.githubusercontent.com/douglasmiranda/lab/master/docker-secrets-as-env/entrypoint.sh /home/caddy/entrypoint.sh
 COPY Caddyfile /etc/caddy/Caddyfile
 
 # /var/www: will store our "hello world" file
