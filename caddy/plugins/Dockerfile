@@ -4,8 +4,8 @@
 # https://docs.docker.com/compose/compose-file/#args
 # https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg
 # https://docs.docker.com/engine/reference/builder/#arg
-# Build: docker build --build-arg PLUGINS=cache,cloudflare -t douglasmiranda/caddy:cache .
-ARG CADDY_VERSION=0.11.1
+# Build: docker build --target=production --build-arg PLUGINS=cache,cloudflare -t douglasmiranda/caddy:cache .
+ARG CADDY_VERSION=0.11.4
 FROM golang:1.11-alpine as builder
 
 RUN apk add --no-cache git gcc musl-dev
@@ -27,12 +27,6 @@ RUN for plugin in $(echo $PLUGINS | tr "," " "); do \
         $GOPATH/src/github.com/mholt/caddy/caddyhttp/$plugin.go ; \
     done
 
-# Using an older version of github.com/xenolf/lego dependency
-# the new one breaks for now.
-RUN if [[ -d /go/src/github.com/xenolf/lego ]]; then \
-        cd /go/src/github.com/xenolf/lego && git checkout "4e842a5eb6dcb9520e03db70cd5896f1df14b72a"; \
-    fi
-
 # build
 WORKDIR /go/src/github.com/mholt/caddy/caddy
 RUN go run build.go -goos=$(go env GOOS) -goarch=$(go env GOARCH) -goarm=$(go env GOARM)
@@ -40,7 +34,7 @@ RUN go run build.go -goos=$(go env GOOS) -goarch=$(go env GOARCH) -goarm=$(go en
 
 # Final stage
 # Caddy running with unprivileged user
-FROM alpine:3.8
+FROM alpine:3.8 as production
 
 ARG PLUGINS
 ARG CADDY_VERSION
