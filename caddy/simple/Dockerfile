@@ -6,8 +6,8 @@
 # https://docs.docker.com/engine/reference/builder/#arg
 # Build: docker build --target=production -t douglasmiranda/caddy .
 # Run: docker run --rm -p "80:80" douglasmiranda/caddy
-ARG CADDY_VERSION=0.11.4
-FROM golang:1.11-alpine as builder
+ARG CADDY_VERSION=0.11.5
+FROM golang:1.12-alpine as builder
 
 RUN apk add --no-cache git gcc musl-dev
 
